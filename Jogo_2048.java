@@ -47,7 +47,7 @@ public class Jogo_2048
 
             String dateString = df.format(new Date());
             term.applySGR(Terminal.SGR.ENTER_BOLD);
-            term.applyForegroundColor(Terminal.Color.RED);
+            term.applyForegroundColor(Terminal.Color.GREEN);
 
             show(dateString, cursor_x, cursor_y);
 
