@@ -5,21 +5,18 @@
 import com.googlecode.lanterna.*;
 import com.googlecode.lanterna.terminal.*;
 import com.googlecode.lanterna.input.*;
-import java.util.Date;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 
-public class Jogo_2048
-{
+
+public class Jogo_2048{
     private Terminal term;
-    private DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    private int cursor_x=10, cursor_y=10;
-
-    public Jogo_2048()
-    {
+    public Jogo_2048(){
+		
         term = TerminalFacade.createTerminal();
         term.enterPrivateMode();
-
+		TerminalSize terminalSize = terminal.getTerminalSize();
+		System.out.println(terminalSize);
+		int random [] = new int [2];
+		
         while (true)
         {
             Key k = term.readInput();
@@ -48,9 +45,9 @@ public class Jogo_2048
             String dateString = df.format(new Date());
             term.applySGR(Terminal.SGR.ENTER_BOLD);
             term.applyForegroundColor(Terminal.Color.GREEN);
-
-            show(dateString, cursor_x, cursor_y);
-
+			if ( terminalSize > cursor x && terminalSize > cursor y ) {
+				show( cursor_x, cursor_y);
+			}
             term.flush();
 
             try
@@ -64,16 +61,12 @@ public class Jogo_2048
         }
     }
 
-    private void show(String str, int x, int y)
+    private void show( int x, int y)
     {
         term.moveCursor(x, y);
 
         int len = str.length();
 
-        for (int i = 0; i < len; i++)
-        {
-            term.putCharacter(str.charAt(i));
-        }
     }
 
     public static void main(String[] args)
