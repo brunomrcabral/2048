@@ -1,194 +1,238 @@
-import java.util.*;
-import java.io.*;
-import java.util.Random.*;
+import com.googlecode.lanterna.*;
+import com.googlecode.lanterna.terminal.*;
+import com.googlecode.lanterna.input.*;
 
 public class Jogo_2048 {
-    private  int pontuacao = 0;
-    public  Jogo_2048(){
-        Scanner ler = new Scanner(System.in);
-        int[][] tabela = new int [4][4];
-        int prenchidos = 0;
-        int xi = 0;
-        for(int i=0 ; i<4 ;i++ ){
-            for(int j=0 ; j<4 ; j++){
-                tabela[i][j] = 0;
-            }
-        }
-        tabela[3][0] = 2 ;
-        tabela[3][1] = 2 ;
-        tabela[3][2] = 2 ;
-        tabela[3][3] = 2 ;
-        numero_random(tabela);
-        numero_random(tabela);
+    public Terminal term;
+    Modelo modelo_jogo = new Modelo();
+    public int[][] tabela = modelo_jogo.tabela;
+
+    public Jogo_2048() {
+        term = TerminalFacade.createTerminal();
+        term.enterPrivateMode();
+        term.getTerminalSize();
+
+        modelo_jogo.inicio();
+        modelo_jogo.numero_random();
+        modelo_jogo.numero_random();
         System.out.println("Estado Inicial");
-        print_matriz(tabela);
+        modelo_jogo.print_matriz();
+        while (true) {
+            Key k = term.readInput();
 
-        while ( xi != 1 ) {
-            System.out.println("1 ---- Cima");
-            System.out.println("2 ---- Baixo");
-            System.out.println("3 ---- Esquerda");
-            System.out.println("4 ---- Direita");
-            int mov = ler.nextInt();
-            switch(mov) {
-                case 1:
-                    cima(tabela);
-                    break;
-                case 2:
-                    baixo(tabela);
-                    break;
-                case 3:
-                    esquerda(tabela);
-                    break;
-                case 4:
-                    direita(tabela);
-                    break;
-
-            }
-            numero_random(tabela);
-            prenchidos = 0 ;
-            System.out.println("Jogada -------------");
-            print_matriz(tabela);
-            for(int i=0 ; i<4 ;i++ ){
-                for(int j=0 ; j<4 ; j++) {
-                    if (tabela[i][j] == 2048) {
-                        xi = 1;
-                        System.out.println("Vitoria");
-                    } else {
-                        if (tabela[i][j] != 0) {
-                            prenchidos++;
-                        }
-                    }
+            if (k != null) {
+                switch (k.getKind()) {
+                    case Escape:
+                        term.exitPrivateMode();
+                        return;
+                    case ArrowLeft:
+                        modelo_jogo.left();
+                        break;
+                    case ArrowRight:
+                        modelo_jogo.right();
+                        break;
+                    case ArrowDown:
+                        modelo_jogo.down();
+                        break;
+                    case ArrowUp:
+                        modelo_jogo.up();
+                        break;
                 }
-            }
-            if ( prenchidos == 16 ) {
-                System.out.println("You Lose");
-                xi = 1 ;
-            }
-        }
-    }
-//----------------------------------------------------------------------------------------------------------------------
-    private void print_matriz(int [][]tabela){
-            for(int i=0 ; i<4 ;i++ ) {
-                for (int j = 0; j < 4; j++) {
-                    System.out.print(tabela[i][j] + " ");
+                if ( modelo_jogo.fim()) {
+                    defeat();
                 }
-                System.out.println();
+                modelo_jogo.diferença_do_anterior();
+                modelo_jogo.print_matriz();
             }
-           System.out.println("Pontuacao ----> " + pontuacao);
-    }
-//---------------------------------------------------------------------------------------------------------------------------
-    private void numero_random(int [][] tabela){
-        Random rn = new Random();
-        int numero = 0 ,posicaox = 0  ,posicaoy = 0 ;
-        while ( numero!=2 && numero != 4 ) {
-            numero =rn.nextInt(5-2)+2;
-            posicaox = rn.nextInt(4);
-            posicaoy = rn.nextInt(4);
-        }
-        //System.out.println("Numero ---> " + numero +" x ---> " + posicaox + " y ----->" + posicaoy);
-        verificar(posicaox,posicaoy,tabela,numero);
-        // System.out.println("---> " +numero + "//// " + posicao);
-
-    }
-
-    private void verificar(int x , int y , int[][] tabela , int numero ){
-        if ( tabela[x][y] != 0 ) {
-            numero_random(tabela);
-        }
-        else tabela[x][y] = numero;
-    }
-
-//----------------------------------------------------------------------------------------------------------------------
-    private void baixo(int [][] tabela){
-        move(tabela);
-        move(tabela);
-        for ( int j = 0 ; j <= 3 ; j++) {
-            int soma = 0;
-            for ( int i= 0 ; i <= 2 ; i++) {
-                if ( tabela[i][j] == tabela[i+1][j] && tabela[i][j] != 0 && soma != 2  ){
-                    soma++;
-                    tabela[i+1][j] = tabela[i][j]*2;
-                    tabela[i][j] = 0  ;
-                    pontuacao++;
-
-                }
-
-            }
-            move(tabela);
-        }
-        move(tabela);
-    }
-
-    private void cima( int [][] tabela){
-        inversao(tabela);
-        baixo(tabela);
-        inversao(tabela);
-    }
-
-
-    private void esquerda(int[][] tabela ) {
-        rotate(tabela);
-        cima(tabela);
-        rotate(tabela);
-    }
-
-    private void direita(int[][] tabela) {
-        rotate(tabela);
-        baixo(tabela);
-        rotate(tabela);
-    }
-
-    private void rotate(int [][]tabela) {
-        int tmp[][] = new int [4][4];
-        for ( int i = 0; i < 4 ; i++) {
-            for( int j = 0; j < 4 ; j++) {
-                tmp[i][j] = tabela[i][j];
-            }
-        }
-        for ( int i = 3 ; i >=0 ; i--) {
-            for ( int j = 0 ; j < 4  ; j++) {
-                tabela[i][j] = tmp[j][i];
+            terminal_display();
+            term.flush();
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException ie) {
+                ie.printStackTrace();
             }
         }
     }
 
-    private void inversao( int [][] tabela )  {
-        int tmp[][] = new int [4][4];
-        for ( int i = 0; i < 4 ; i++) {
-            for( int j = 0; j < 4 ; j++) {
-                tmp[i][j] = tabela[i][j];
-            }
-        }
+    //-----------------Terminal-lanterna-------------------------------------------
+    private void terminal_display() {
+        int x = 30;
+        int y = 5;
+        int n = 0;
+        String s = "";
         for ( int i = 0 ; i < 4 ; i++) {
+            show_x_table(x-2,y);
+            show_y_table(x,y-2);
+            x = x +12 ;
+        }
+        x = 30 ;
+        for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                if (i == 0) {
-                    tabela[3][j] = tmp[0][j];
+                color_table( i, j , x+3,y);
+                term.moveCursor(x+3, y);
+                s = s + tabela[i][j];
+                term.putCharacter(s.charAt(n));
+                if (tabela[i][j] == 16 || tabela[i][j] == 32 || tabela[i][j] == 64) {
+                    term.putCharacter(s.charAt(n + 1));
+                    n++;
+                } else if (tabela[i][j] == 128 || tabela[i][j] == 256 || tabela[i][j] == 512) {
+                    term.putCharacter(s.charAt(n + 1));
+                    n++;
+                    term.putCharacter(s.charAt(n + 1));
+                    n++;
+
+                } else if (tabela[i][j] == 1024 || tabela[i][j] == 2048) {
+                    term.putCharacter(s.charAt(n + 1));
+                    n++;
+                    term.putCharacter(s.charAt(n + 1));
+                    n++;
+                    term.putCharacter(s.charAt(n + 1));
+                    n++;
+
                 }
-                if (i == 3) {
-                    tabela[0][j] = tmp[3][j];
+                if (tabela[i][j] == 2048) {
+                    victory();
                 }
-                if (i == 1) {
-                    tabela[2][j] = tmp[1][j];
-                }
-                if (i == 2) {
-                    tabela[1][j] = tmp[2][j];
-                }
+                x = x + 12;
+                n++;
             }
+            x = 30;
+            y = y + 5;
+            n = 0;
+            s = "";
+        }
+        points();
+        term.moveCursor(0,0);
+    }
+
+    private void show_x_table(int x1, int y1) {
+        int z = x1 ;
+        for ( int j = 0; j < 5; j++ ) {
+            x1 = z ;
+            for (int i = 0; i < 12; i++) {
+                term.moveCursor(x1,y1-2);
+                term.putCharacter('/');
+                x1++;
+            }
+            y1= y1 + 5 ;
         }
     }
 
-    private void move( int [][] tabela ) {
-        for ( int i = 3 ; i >= 1 ; i--) {
-            for ( int j = 3 ; j >= 0 ; j--) {
-                if ( tabela[i-1][j] != 0 && tabela[i][j] == 0 ) {
-                    tabela[i][j] = tabela[i-1][j];
-                    tabela[i-1][j] = 0 ;
-                }
+    private void show_y_table(int x1, int y1) {
+        int z = y1;
+        for (int j = 0; j < 2; j++) {
+            y1 = z;
+            for (int i = 0; i < 21; i++) {
+                term.moveCursor(x1-2, y1);
+                term.putCharacter('|');
+                y1++;
             }
+            x1 = x1 + 12;
         }
     }
-//----------------------------------------------------------------------------------------------------------------------
+    //-------------------------Cores dos numeros e da tabela --------------------------
+    private void color( int i, int j ) {
+        if (tabela[i][j] == 0) {
+            term.applyBackgroundColor(Terminal.Color.WHITE);
+            term.applyForegroundColor(Terminal.Color.WHITE);
+        } else if (tabela[i][j] == 2) {
+            term.applyBackgroundColor(Terminal.Color.BLUE);
+            term.applyForegroundColor(Terminal.Color.BLUE);
+        } else if (tabela[i][j] == 4) {
+            term.applyBackgroundColor(Terminal.Color.RED);
+            term.applyForegroundColor(Terminal.Color.RED);
+        } else if (tabela[i][j] == 8) {
+            term.applyBackgroundColor(Terminal.Color.GREEN);
+            term.applyForegroundColor(Terminal.Color.GREEN);
+
+        } else if (tabela[i][j] == 16) {
+            term.applyBackgroundColor(Terminal.Color.YELLOW);
+            term.applyForegroundColor(Terminal.Color.YELLOW);
+
+        } else if (tabela[i][j] == 32) {
+            term.applyBackgroundColor(Terminal.Color.CYAN);
+            term.applyForegroundColor(Terminal.Color.CYAN);
+
+        } else if (tabela[i][j] == 64) {
+            term.applyBackgroundColor(Terminal.Color.MAGENTA);
+            term.applyForegroundColor(Terminal.Color.MAGENTA);
+
+        } else if (tabela[i][j] == 128) {
+            term.applyBackgroundColor(255,128,0);
+            term.applyForegroundColor(255,128,0);
+
+        } else if (tabela[i][j] == 256) {
+            term.applyBackgroundColor(255,51,123);
+            term.applyForegroundColor(255,51,123);
+        } else if (tabela[i][j] == 512) {
+            term.applyBackgroundColor(102,102,0);
+            term.applyForegroundColor(102,102,0);
+        } else if (tabela[i][j] == 1024) {
+            term.applyBackgroundColor(102,0,51);
+            term.applyForegroundColor(102,0,51);
+        } else if (tabela[i][j] == 2048) {
+            term.applyBackgroundColor(0,51,0);
+            term.applyForegroundColor(0,51,0);
+        }
+    }
+
+    private void color_table(int i1 , int j1 , int x2 ,int y2) {
+        for (int i = x2-4; i < x2+7 ; i++) {
+            for (int j = y2 - 1; j < y2 + 3; j++) {
+                term.moveCursor(i, j);
+                term.putCharacter('.');
+                color(i1,j1);
+
+            }
+        }
+        term.moveCursor(x2-4,y2-1); // Prenche o 1º espaço , caso contrario aparece um ponto nesta posiçao
+        term.putCharacter('.');
+        term.applyForegroundColor(Terminal.Color.WHITE);
+    }
+    //---------------------------Pontuaçao , Derrota e Vitroia---------------------
+    private void points(){
+        term.applyBackgroundColor(Terminal.Color.BLACK);
+        term.moveCursor(1, 9);
+        String t = "Pontuacao -> ";
+        for (int l = 0; l < t.length(); l++) {
+            term.putCharacter(t.charAt(l));
+        }
+        term.moveCursor(14, 9);
+        String k = "";
+        k += modelo_jogo.points;
+        term.putCharacter(k.charAt(0));
+        if ( modelo_jogo.points <= 99  &&modelo_jogo.points >= 10) {
+            term.putCharacter(k.charAt(1));
+        }
+        else if ( modelo_jogo.points > 99  && modelo_jogo.points <= 999) {
+            term.putCharacter(k.charAt(1));
+            term.putCharacter(k.charAt(2));
+        }
+    }
+
+    private void defeat(){
+        String p ;
+        p = "Derrota :(";
+        term.moveCursor(3, 10);
+        for (int c = 0; c < p.length(); c++) {
+            term.putCharacter(p.charAt(c));
+        }
+    }
+
+    private void victory(){
+        String p ;
+        p = "Vitoria :D";
+        term.moveCursor(3, 10);
+        for (int c = 0; c < p.length(); c++) {
+            term.putCharacter(p.charAt(c));
+        }
+    }
+
+    //----------------------------------------Main---------------------------------
     public static void main(String[] args) {
         new Jogo_2048();
     }
 }
+
+
+
